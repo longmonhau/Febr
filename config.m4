@@ -13,9 +13,9 @@ dnl [  --with-Febr             Include Febr support])
 
 dnl Otherwise use enable:
 
-dnl PHP_ARG_ENABLE(Febr, whether to enable Febr support,
+PHP_ARG_ENABLE(Febr, whether to enable Febr support,
 dnl Make sure that the comment is aligned:
-dnl [  --enable-Febr           Enable Febr support])
+[  --enable-Febr           Enable Febr support])
 
 if test "$PHP_FEBR" != "no"; then
   dnl Write more examples of tests here...
@@ -45,7 +45,7 @@ if test "$PHP_FEBR" != "no"; then
 
   dnl # --with-Febr -> check for lib and symbol presence
   dnl LIBNAME=Febr # you may want to change this
-  dnl LIBSYMBOL=Febr # you most likely want to change this 
+  dnl LIBSYMBOL=Febr # you most likely want to change this
 
   dnl PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
   dnl [
@@ -57,7 +57,7 @@ if test "$PHP_FEBR" != "no"; then
   dnl   -L$FEBR_DIR/$PHP_LIBDIR -lm
   dnl ])
   dnl
-  dnl PHP_SUBST(FEBR_SHARED_LIBADD)
+  PHP_SUBST(FEBR_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(Febr, Febr.c, $ext_shared)
+  PHP_NEW_EXTENSION(Febr, Febr.c Febr_Call.c, $ext_shared)
 fi

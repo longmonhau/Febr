@@ -18,30 +18,23 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "Febr_Call.H"
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "php_Febr.h"
-
-/* If you declare any globals in php_Febr.h uncomment this:
+/* If you declare any globals in php_Febr.h uncomment this:*/
 ZEND_DECLARE_MODULE_GLOBALS(Febr)
-*/
+
 
 /* True global resources - no need for thread safety here */
 static int le_Febr;
+char *log_file;
 
 /* {{{ PHP_INI
  */
-/* Remove comments and fill if you need to have entries in php.ini
+/* Remove comments and fill if you need to have entries in php.ini*/
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("Febr.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_Febr_globals, Febr_globals)
-    STD_PHP_INI_ENTRY("Febr.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_Febr_globals, Febr_globals)
+    STD_PHP_INI_ENTRY("Febr.error_log_file", "/tmp/febr_error", PHP_INI_ALL, NULL, FebrErrorOutPutPath, zend_Febr_globals, Febr_globals)
 PHP_INI_END()
-*/
+/**/
 /* }}} */
 
 /* Remove the following function when you have successfully modified config.m4
@@ -51,7 +44,7 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_Febr_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_Febr_compiled)
+/*PHP_FUNCTION(confirm_Febr_compiled)
 {
 	char *arg = NULL;
 	int arg_len, len;
@@ -63,6 +56,63 @@ PHP_FUNCTION(confirm_Febr_compiled)
 
 	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "Febr", arg);
 	RETURN_STRINGL(strg, len, 0);
+}*/
+ZEND_FUNCTION(Febr_Call)
+{
+	zval *func, *args;
+	MAKE_STD_ZVAL(args);
+	ZVAL_NULL(args);
+
+	if( zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,"z|z",&func,&args) == FAILURE )
+	{
+		//php_error_docref(NULL TSRMLS_CC, E_ERROR,"Call to undefined function: %s()", func->value.str.val);
+		return;
+	}
+	
+	Thread_Param *p = (Thread_Param*)emalloc(sizeof(Thread_Param));
+
+	if( Z_TYPE_P(func) == IS_STRING )
+	{
+		char *fname = func->value.str.val;
+		if(check_user_function_exist(fname) == -1 )
+		{
+			char msg[100];
+			sprintf(msg,"Calling an undefined function %s()", fname);
+			//php_printf("Calling a undefined function %s()",msg);
+			Febr_error_log( log_file, msg);
+			return;
+		}
+
+		p->object = NULL;
+		p->method = func;
+
+		if( Z_TYPE_P(args) == IS_NULL )
+		{
+			p->args_num = 0;
+			p->args = NULL;
+		}
+		if(Z_TYPE_P(args) == IS_STRING )
+		{
+			p->args_num = 1;
+			p->args = args;
+		}
+		if( Z_TYPE_P(args) == IS_ARRAY )
+		{
+			//
+		}
+	}
+	pthread_t febr_thread;
+	funcPtr fp = &Febr_call_user_function;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if( pthread_create(&febr_thread, &attr, fp, p) != 0 )
+	{
+		php_printf("creating pthread failed");
+		return;
+	}
+	php_printf("thread id: %p\n",&febr_thread);
+	pthread_attr_destroy (&attr);
 }
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and 
@@ -74,22 +124,22 @@ PHP_FUNCTION(confirm_Febr_compiled)
 
 /* {{{ php_Febr_init_globals
  */
-/* Uncomment this function if you have INI entries
+/* Uncomment this function if you have INI entries*/
 static void php_Febr_init_globals(zend_Febr_globals *Febr_globals)
 {
-	Febr_globals->global_value = 0;
-	Febr_globals->global_string = NULL;
+	//Febr_globals->ThreadNum = 10;
+	//Febr_globals->ErrorOutPutPath = NULL;
 }
-*/
+/**/
 /* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(Febr)
 {
-	/* If you have INI entries, uncomment these lines 
+	/* If you have INI entries, uncomment these lines */
 	REGISTER_INI_ENTRIES();
-	*/
+	log_file = INI_STR("Febr.error_log_file");
 	return SUCCESS;
 }
 /* }}} */
@@ -98,9 +148,9 @@ PHP_MINIT_FUNCTION(Febr)
  */
 PHP_MSHUTDOWN_FUNCTION(Febr)
 {
-	/* uncomment this line if you have INI entries
+	/* uncomment this line if you have INI entries*/
 	UNREGISTER_INI_ENTRIES();
-	*/
+	
 	return SUCCESS;
 }
 /* }}} */
@@ -129,11 +179,12 @@ PHP_MINFO_FUNCTION(Febr)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Febr support", "enabled");
+	php_info_print_table_row(2, "Halo world", "I just met a girl named JiaYi!");
 	php_info_print_table_end();
 
-	/* Remove comments if you have entries in php.ini
+	/* Remove comments if you have entries in php.ini*/
 	DISPLAY_INI_ENTRIES();
-	*/
+	
 }
 /* }}} */
 
@@ -142,7 +193,8 @@ PHP_MINFO_FUNCTION(Febr)
  * Every user visible function must have an entry in Febr_functions[].
  */
 const zend_function_entry Febr_functions[] = {
-	PHP_FE(confirm_Febr_compiled,	NULL)		/* For testing, remove later. */
+	//PHP_FE(confirm_Febr_compiled,	NULL)		/* For testing, remove later. */
+	ZEND_FE(Febr_Call, NULL)
 	PHP_FE_END	/* Must be the last line in Febr_functions[] */
 };
 /* }}} */

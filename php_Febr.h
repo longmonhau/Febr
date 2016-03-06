@@ -41,12 +41,12 @@ extern zend_module_entry Febr_module_entry;
 /* 
   	Declare any global variables you may need between the BEGIN
 	and END macros here:     
-
-ZEND_BEGIN_MODULE_GLOBALS(Febr)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(Febr)
 */
+ZEND_BEGIN_MODULE_GLOBALS(Febr)
+	long   FebrThreadNum;
+	char   *FebrErrorOutPutPath;
+ZEND_END_MODULE_GLOBALS(Febr)
+
 
 /* In every utility function you add that needs to use variables 
    in php_Febr_globals, call TSRMLS_FETCH(); after declaring other 
